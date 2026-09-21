@@ -208,9 +208,9 @@ try {
         $Sandbox = if ($Mode -eq "write") { "workspace-write" } else { "read-only" }
 
         if ($SessionMode -eq "sticky" -and -not [string]::IsNullOrWhiteSpace($ExistingWorkerSession)) {
-            $Lines=& codex exec --json --sandbox $Sandbox resume $ExistingWorkerSession $WorkerPrompt 2> $RawErr
+            $Lines=& codex exec --json --skip-git-repo-check --sandbox $Sandbox resume $ExistingWorkerSession $WorkerPrompt 2> $RawErr
         } else {
-            $Lines=& codex exec --json --sandbox $Sandbox $WorkerPrompt 2> $RawErr
+            $Lines=& codex exec --json --skip-git-repo-check --sandbox $Sandbox $WorkerPrompt 2> $RawErr
         }
 
         $ExitCode=$LASTEXITCODE

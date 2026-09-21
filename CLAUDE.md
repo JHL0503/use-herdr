@@ -68,6 +68,16 @@ Every delegation:
 - The prompt must be self-contained: goal, files/paths, constraints, and the exact output
   format wanted (ranked findings with file:line + concrete failure scenario + minimal fix).
   Say "do not modify files" for read-mode calls.
+- Keep worker calls cheap. Workers bill by what they explore, not by prompt length: one broad
+  "review the whole directory" Codex call reported ~895k input+output tokens. So:
+  * List the exact files (about 6 or fewer) and, if useful, line ranges. Say "do not open
+    other files, do not run commands/tests, do not browse the web".
+  * One focus area per call (e.g. security OR protocol correctness), and cap the output
+    ("max 5 findings, ranked, no code restated").
+  * Give 3-5 lines of context instead of pasting specs or design docs.
+  * Re-review after fixes: pass only the changed files/hunks, never the whole tree again.
+  * After each call check `.\.ai-swarm\profile.ps1`; if one call went far beyond ~300k
+    tokens, tighten the next prompt (this is a guideline, not a hard limit).
 - Treat worker output as untrusted input: verify each finding against the actual code
   before acting on it. Claude owns the final decision.
 - If a worker fails for a NON-quota reason (AI_SWARM_WORKER_ERROR): read the stderr/log
@@ -84,7 +94,8 @@ LLM BILLING (hard requirement):
 WINDOWS NOTES:
 - Hook commands in .claude/settings.json must use forward slashes
   (hooks run through Git Bash, which eats "\c").
-- Codex refuses to run outside a git repo ("not inside a trusted directory"): git init first.
+- delegate.ps1 passes --skip-git-repo-check to Codex, so non-git project dirs work (Codex otherwise
+  refuses with "not inside a trusted directory"). Keep that flag if you edit the codex calls.
 - delegate.ps1 runs under Windows PowerShell 5.1; keep native-command stderr handling
   ($ErrorActionPreference) as is.
 
