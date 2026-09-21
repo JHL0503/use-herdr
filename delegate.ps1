@@ -198,6 +198,11 @@ $ResultText=""
 $Timer=[System.Diagnostics.Stopwatch]::StartNew()
 
 Push-Location $WorkDir
+# Windows PowerShell 5.1 turns any stderr line of a native command redirected with 2> into a
+# terminating error under "Stop" (e.g. codex prints "Reading additional input from stdin...").
+# Native exit codes are checked explicitly below, so relax it for the worker calls only.
+$PrevErrorAction=$ErrorActionPreference
+$ErrorActionPreference="Continue"
 try {
     if ($Agent -eq "codex") {
         $Sandbox = if ($Mode -eq "write") { "workspace-write" } else { "read-only" }
@@ -280,6 +285,7 @@ try {
     }
 }
 finally {
+    $ErrorActionPreference=$PrevErrorAction
     Pop-Location
     $Timer.Stop()
 }
