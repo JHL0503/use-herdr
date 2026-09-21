@@ -86,7 +86,9 @@ if (-not (Test-Path $claudeMdDst)) {
 
 New-Item -ItemType Directory -Force -Path $ClaudeDir | Out-Null
 $settingsPath = Join-Path $ClaudeDir "settings.json"
-$hookCmd = "powershell -NonInteractive -File .ai-swarm\claude-session-hook.ps1"
+# Forward slash on purpose: Claude Code runs hooks through Git Bash on Windows, which eats "\c".
+$hookCmd = "powershell -NonInteractive -File .ai-swarm/claude-session-hook.ps1"
+$legacyHookCmd = "powershell -NonInteractive -File .ai-swarm\claude-session-hook.ps1"
 
 # Load or init
 $settings = $null
@@ -102,6 +104,16 @@ if (-not ($settings.PSObject.Properties.Name -contains "hooks")) {
 }
 if (-not ($settings.hooks.PSObject.Properties.Name -contains "PreToolUse")) {
     $settings.hooks | Add-Member -Force -NotePropertyName "PreToolUse" -NotePropertyValue @()
+}
+
+# Migrate entries written by older installers (backslash path is broken under Git Bash)
+$migrated = $false
+foreach ($e in @($settings.hooks.PreToolUse)) {
+    if ($e.PSObject.Properties.Name -contains "hooks") {
+        foreach ($h in @($e.hooks)) {
+            if ([string]$h.command -eq $legacyHookCmd) { $h.command = $hookCmd; $migrated = $true }
+        }
+    }
 }
 
 # Check if hook already registered
@@ -123,6 +135,9 @@ if ($alreadyIn.Count -eq 0) {
     $settings.hooks | Add-Member -Force -NotePropertyName "PreToolUse" -NotePropertyValue ($existing + $entry)
     $settings | ConvertTo-Json -Depth 20 | Set-Content -Encoding UTF8 $settingsPath
     Write-Host "  [OK] .claude/settings.json (hook registered)"
+} elseif ($migrated) {
+    $settings | ConvertTo-Json -Depth 20 | Set-Content -Encoding UTF8 $settingsPath
+    Write-Host "  [OK] .claude/settings.json (hook path migrated to forward slash)"
 } else {
     Write-Host "  [SKIP] Hook already in .claude/settings.json"
 }
