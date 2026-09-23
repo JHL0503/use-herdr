@@ -126,8 +126,10 @@ powershell -File C:\workspace\herdr설치\install.ps1 -Target C:\workspace\mypro
 [OK] .ai-swarm/ 디렉터리 구조 생성 (state, logs, reports, tmp)
 [OK] delegate.ps1, profile.ps1, trace.ps1, claude-session-hook.ps1 복사
 [OK] .ai-swarm/config.json 생성 (herdr_session 자동 감지)
-[OK] CLAUDE.md 생성 (이미 있으면 skip)
+[OK] .ai-swarm/RULES.md 복사 (공통 규칙, 매번 최신으로 덮어씀)
+[OK] CLAUDE.md 생성 (@.ai-swarm/RULES.md 참조, 이미 있으면 참조 줄만 맨 위에 추가)
 [OK] .claude/settings.json 에 Claude session hook 등록
+[OK] .gitignore 에 ai-swarm 런타임 경로 추가 (logs, state, tmp, reports)
 ```
 
 ### 여러 프로젝트에 배포
@@ -147,7 +149,8 @@ powershell -File C:\workspace\herdr설치\install.ps1 -Target C:\workspace\socia
 herdr설치/
 ├── README.md                  ← 이 문서
 ├── install.ps1                ← 프로젝트 설치 진입점
-├── CLAUDE.md                  ← Claude 지시 템플릿
+├── RULES.md                   ← 공통 규칙 (원본, 수정은 여기서)
+├── CLAUDE.md                  ← 이 저장소용 (@RULES.md 참조)
 ├── delegate.ps1               ← Worker gateway
 ├── profile.ps1                ← 사용량 분석
 ├── trace.ps1                  ← Trace ID 관리
@@ -159,7 +162,8 @@ herdr설치/
 
 ```
 myproject/
-├── CLAUDE.md                  ← Claude 지시 (install.ps1이 생성)
+├── CLAUDE.md                  ← @.ai-swarm/RULES.md 참조 + 프로젝트별 메모
+├── .gitignore                 ← ai-swarm 런타임 경로 추가됨
 ├── .claude/
 │   └── settings.json          ← Claude hook 등록
 └── .ai-swarm/
@@ -168,6 +172,7 @@ myproject/
     ├── profile.ps1
     ├── trace.ps1
     ├── claude-session-hook.ps1
+    ├── RULES.md               ← 공통 규칙 (install 때마다 갱신)
     ├── state/
     │   ├── current-trace.json
     │   ├── current-claude.json
@@ -555,5 +560,6 @@ Codex quota 부족
 | `profile.ps1` | 사용량 분석 리포트 | `.\.ai-swarm\profile.ps1` |
 | `trace.ps1` | Trace ID 관리 | `.\.ai-swarm\trace.ps1 -Set "..."` |
 | `claude-session-hook.ps1` | Claude session ID 캡처 | Claude Code hook으로 자동 실행 |
-| `CLAUDE.md` | Claude 지시 (템플릿) | — |
+| `RULES.md` | 공통 규칙 (타겟의 `.ai-swarm/RULES.md`로 복사) | — |
+| `CLAUDE.md` | 이 저장소용 지시 (`@RULES.md` 참조) | — |
 | `config.json` | herdr_session 설정 | — |

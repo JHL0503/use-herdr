@@ -2,6 +2,12 @@
 .vscode/
 .idea/
 
+# ai-swarm runtime (created when scripts are run from this source dir)
+/state/
+/logs/
+/tmp/
+/reports/
+
 # Windows
 Thumbs.db
 Desktop.ini
