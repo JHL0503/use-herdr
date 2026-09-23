@@ -261,7 +261,11 @@ try {
             $Args += @("--session-id",$WorkerSessionId)
         }
 
-        $Args += @("-p",$WorkerPrompt,"--output-format","json","--cwd",$WorkDir)
+        # Prompt goes through a file, not -p: PS 5.1 does not escape embedded double quotes in native
+        # arguments, so a prompt containing " gets split into extra args. Write UTF-8 without BOM.
+        $PromptFile = Join-Path $TmpDir "$CallId.prompt.txt"
+        [System.IO.File]::WriteAllText($PromptFile, $WorkerPrompt, [System.Text.UTF8Encoding]::new($false))
+        $Args += @("--prompt-file",$PromptFile,"--output-format","json","--cwd",$WorkDir)
         if ($Mode -eq "write") { $Args += "--always-approve" }
 
         $Output=& grok @Args 2> $RawErr
