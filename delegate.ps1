@@ -207,10 +207,18 @@ try {
     if ($Agent -eq "codex") {
         $Sandbox = if ($Mode -eq "write") { "workspace-write" } else { "read-only" }
 
-        if ($SessionMode -eq "sticky" -and -not [string]::IsNullOrWhiteSpace($ExistingWorkerSession)) {
-            $Lines=& codex exec --json --skip-git-repo-check --sandbox $Sandbox resume $ExistingWorkerSession $WorkerPrompt 2> $RawErr
-        } else {
-            $Lines=& codex exec --json --skip-git-repo-check --sandbox $Sandbox $WorkerPrompt 2> $RawErr
+        # Prompt goes through stdin ("-"): PS 5.1 does not escape embedded double quotes in native
+        # arguments, so a prompt containing " gets split into extra args. Pipe as UTF-8 (5.1 default is ASCII).
+        $PrevOutputEncoding=$OutputEncoding
+        $OutputEncoding=[System.Text.UTF8Encoding]::new($false)
+        try {
+            if ($SessionMode -eq "sticky" -and -not [string]::IsNullOrWhiteSpace($ExistingWorkerSession)) {
+                $Lines=$WorkerPrompt | & codex exec --json --skip-git-repo-check --sandbox $Sandbox resume $ExistingWorkerSession - 2> $RawErr
+            } else {
+                $Lines=$WorkerPrompt | & codex exec --json --skip-git-repo-check --sandbox $Sandbox - 2> $RawErr
+            }
+        } finally {
+            $OutputEncoding=$PrevOutputEncoding
         }
 
         $ExitCode=$LASTEXITCODE
